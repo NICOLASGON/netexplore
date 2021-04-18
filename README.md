@@ -11,7 +11,7 @@ This project is mainly inspired by :
 ### Packages
 
 Installation of some packages on your host system : \
-`apt install lxc bridge-utils`
+`apt install lxc bridge-utils` \
 `sudo pip3 install pylxc graphviz` 
 
 ### Networking
