@@ -36,7 +36,7 @@ def create_machine(machine):
     template_config = load_json_file('templates/{}/template.json'.format(machine['template']))
 
     # Download distribution rootfs
-    if not container.create("download", lxc.LXC_CREATE_QUIET, template_config['dist']):
+    if not container.create("download", args=template_config['dist']):
         print("Failed to create the container rootfs", file=sys.stderr)
         sys.exit(1)
 
