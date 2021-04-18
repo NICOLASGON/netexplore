@@ -11,7 +11,7 @@ This project is mainly inspired by :
 ### Packages
 
 Installation of some packages on your host system : \
-`apt install lxc bridge-utils` \
+`sudo apt install lxc bridge-utils` \
 `sudo pip3 install pylxc graphviz` 
 
 ### Networking
@@ -33,4 +33,4 @@ All the base templates are in the `templates` directory. You can extend it by ad
 You need to create a project directory or use an example project in the `examples` directory.
 
 Deploy your first networks : \
-`./netexplore start examples/basic-layer3`
+`sudo ./netexplore start examples/basic-layer3`
