@@ -2,7 +2,7 @@
 
 Netexplore uses containers to deploy an internet-like environment in order to teach the fundamentals of the Internet.
 
-This project is mainly inspired by : \
+This project is mainly inspired by :
  * https://www.marionnet.org
  * https://github.com/flesueur/mi-lxc
 
