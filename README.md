@@ -17,8 +17,8 @@ Installation of some packages on your host system : \
 ### Networking
 
 Use debian lxc-net : \
-https://wiki.debian.org/fr/LXC/SimpleBridge
-https://debian-facile.org/doc:reseau:vm:lxc-net
+ * https://wiki.debian.org/fr/LXC/SimpleBridge
+ * https://debian-facile.org/doc:reseau:vm:lxc-net
 
 #### OR
 
