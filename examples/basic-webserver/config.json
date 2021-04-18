@@ -1,0 +1,21 @@
+{
+    "machines": [
+        {
+            "name": "m1",
+            "template": "hosts/machine",
+            "interfaces": [
+                {"name": "internet", "ipv4": "10.0.1.1/24"}
+            ]
+        },
+        {
+            "name": "webserver",
+            "template": "http/webserver",
+            "interfaces": [
+                {"name": "internet", "ipv4": "10.0.1.2/24"}
+            ]
+        }
+    ],
+    "networks": [
+        {"name": "internet"}
+    ]
+}

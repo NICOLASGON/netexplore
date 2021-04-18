@@ -1,0 +1,138 @@
+#!/usr/bin/python3
+
+import lxc
+import sys
+import json
+import time
+import os
+from graphviz import Graph
+
+def load_json_file(path):
+    json_file = None
+    with open(path) as config_file:
+        json_file = json.load(config_file)
+    return json_file
+
+def create_network(net):
+    os.system("brctl addbr {}".format(net['name']))
+    os.system("ip link set {} up".format(net['name']))
+    os.system("iptables -A FORWARD -i {} -o {} -j ACCEPT".format(net['name'], net['name']))
+
+def delete_network(net):
+    os.system("ip link set {} down".format(net['name']))
+    os.system("brctl delbr {}".format(net['name']))
+    os.system("iptables -D FORWARD -i {} -o {} -j ACCEPT".format(net['name'], net['name']))
+
+def create_machine(machine):
+
+    # Create or recreate the container if it exists
+    container = lxc.Container(machine['name'])
+    if container.defined:
+        container.stop()
+        container.destroy()
+        container = lxc.Container(machine['name'])
+
+    # Load template configuration
+    template_config = load_json_file('templates/{}/template.json'.format(machine['template']))
+
+    # Download distribution rootfs
+    if not container.create("download", lxc.LXC_CREATE_QUIET, template_config['dist']):
+        print("Failed to create the container rootfs", file=sys.stderr)
+        sys.exit(1)
+
+    # Create interface with host for internet access
+    container.network[0].type = "veth"
+    container.network[0].link = "lxcbr0"
+    container.network[0].flags = "up"
+
+    # Create interfaces from config file
+    if_num = 1
+    for interface in machine['interfaces']:
+        container.network.add("veth")
+        container.network[if_num].link = interface['name']
+        container.network[if_num].flags = "up"
+        if 'ipv4' in interface:
+            container.append_config_item("lxc.net.{}.ipv4.address".format(if_num), interface['ipv4'])
+        if 'ipv6' in interface:
+            container.append_config_item("lxc.net.{}.ipv6.address".format(if_num), interface['ipv6'])
+        if_num += 1
+
+    # Mount template and custom directories
+    template_dir = os.path.dirname(os.path.realpath(sys.modules['__main__'].__file__))
+    container.append_config_item("lxc.mount.entry", template_dir + "/templates mnt/templates none ro,bind,create=dir 0 0")
+    custom_dir = os.path.realpath(project_path)
+    container.append_config_item("lxc.mount.entry", custom_dir + "/custom mnt/custom none ro,bind,create=dir 0 0")
+
+    # Start the container
+    if not container.start():
+        print("Failed to start the container", file=sys.stderr)
+        sys.exit(1)
+
+    # Wait for the DHCP on lxcbr0 interface
+    # TODO: find another solution to wait less than 5 secs
+    time.sleep(5)
+
+    if not container.get_ips(timeout=60):
+        print("Failed to get ips of the container", file=sys.stderr)
+        sys.exit(1)
+
+    # Execute init scripts from template and customization
+    container.attach_wait(lxc.attach_run_command, ["/bin/sh", "/mnt/templates/{}/provisioning.sh".format(machine['template'])])
+    if os.path.isfile('{}/custom/{}.sh'.format(custom_dir, machine['name'])):
+        container.attach_wait(lxc.attach_run_command, ["/bin/sh", "/mnt/custom/{}.sh".format(machine['name'])])
+
+def delete_machine(machine):
+    container = lxc.Container(machine['name'])
+    container.stop()
+    container.destroy()
+
+def create_graph(config):
+    g = Graph('G', filename='process.gv', engine='sfdp')
+
+    # Graph networks
+    g.attr('node', shape='ellipse')
+    for net in config['networks']:
+        g.node(net['name'])
+
+    # Graph machine and link with networks
+    g.attr('node', shape='box')
+    for machine in config['machines']:
+
+        if_list = ''
+        for interface in machine['interfaces']:
+            if 'ipv4' in interface:
+                if_list = if_list + '\n' + interface['ipv4']
+            if 'ipv6' in interface:
+                if_list = if_list + '\n' + interface['ipv6']
+
+        g.node(machine['name'], label='{} {}'.format(machine['name'], if_list))
+
+        for interface in machine['interfaces']:
+            g.edge(interface['name'], machine['name'])
+
+    g.view()
+
+if __name__ == '__main__':
+    
+    project_path = sys.argv[2]
+    config = load_json_file('{}/config.json'.format(project_path))
+
+    if sys.argv[1] == "start":
+    
+        for net in config['networks']:
+            create_network(net)
+
+        for machine in config['machines']:
+            create_machine(machine)
+    
+    elif sys.argv[1] == "stop":
+
+        for net in config['networks']:
+            delete_network(net)
+
+        for machine in config['machines']:
+            delete_machine(machine)
+
+    elif sys.argv[1] == "graph":
+
+        create_graph(config)

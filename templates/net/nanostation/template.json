@@ -1,0 +1,4 @@
+{
+    "name": "nanostation",
+    "dist": {"dist": "alpine", "release": "3.13", "arch": "amd64"}
+}

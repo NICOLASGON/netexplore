@@ -1,0 +1,30 @@
+{
+    "machines": [
+        {
+            "name": "m1",
+            "template": "hosts/machine",
+            "interfaces": [
+                {"name": "blue-lan", "ipv4": "10.0.1.2/24"}
+            ]
+        },
+        {
+            "name": "m2",
+            "template": "hosts/machine",
+            "interfaces": [
+                {"name": "red-lan", "ipv4": "10.0.2.2/24"}
+            ]
+        },
+        {
+            "name": "router",
+            "template": "net/router",
+            "interfaces": [
+                {"name": "blue-lan", "ipv4": "10.0.1.1/24"},
+                {"name": "red-lan", "ipv4": "10.0.2.1/24"}
+            ]
+        }
+    ],
+    "networks": [
+        {"name": "red-lan"},
+        {"name": "blue-lan"}
+    ]
+}

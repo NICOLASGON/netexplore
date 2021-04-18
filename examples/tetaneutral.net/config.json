@@ -1,0 +1,61 @@
+{
+    "machines": [
+        {
+            "name": "h7",
+            "template": "net/router",
+            "interfaces": [
+                {"name": "internet", "ipv4": "10.0.1.1/24"}
+            ]
+        },
+        {
+            "name": "webserver",
+            "template": "http/webserver",
+            "interfaces": [
+                {"name": "internet", "ipv4": "10.0.1.2/24"}
+            ]
+        },
+        {
+            "name": "shuttle",
+            "template": "net/router",
+            "interfaces": [
+                {"name": "internet", "ipv4": "10.0.1.3/24"},
+                {"name": "airlink", "ipv4": "172.0.57.1/24"}
+            ]
+        },
+        {
+            "name": "nanostation01",
+            "template": "net/nanostation",
+            "interfaces": [
+                {"name": "airlink", "ipv4": "172.0.57.2/24"}
+            ]
+        },
+        {
+            "name": "nanostation02",
+            "template": "net/nanostation",
+            "interfaces": [
+                {"name": "airlink", "ipv4": "172.0.57.3/24"}
+            ]
+        },
+        {
+            "name": "tplink01",
+            "template": "net/router",
+            "interfaces": [
+                {"name": "airlink", "ipv4": "172.0.57.4/24"},
+                {"name": "lan", "ipv4": "192.168.1.254/24"}
+            ]
+        },
+        {
+            "name": "user",
+            "template": "hosts/machine",
+            "interfaces": [
+                {"name": "lan", "ipv4": "192.168.1.1/24"}
+            ]
+        }
+    ],
+    "networks": [
+        {"name": "internet"},
+        {"name": "shuttle_lan"},
+        {"name": "airlink"},
+        {"name": "lan"}
+    ]
+}

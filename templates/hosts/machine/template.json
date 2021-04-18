@@ -1,0 +1,4 @@
+{
+    "name": "machine",
+    "dist": {"dist": "debian", "release": "buster", "arch": "amd64"}
+}
