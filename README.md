@@ -8,13 +8,19 @@ This project is mainly inspired by :
 
 ## Installation
 
+### Packages
+
 Installation of some packages on your host system : \
 `apt install lxc bridge-utils`
 `sudo pip3 install pylxc graphviz` 
 
+### Networking
+
 Use debian lxc-net : \
 https://wiki.debian.org/fr/LXC/SimpleBridge
 https://debian-facile.org/doc:reseau:vm:lxc-net
+
+#### OR
 
 Create a bridge for the internet connection : \
 `sudo brctl addbr lxcbr0` \
