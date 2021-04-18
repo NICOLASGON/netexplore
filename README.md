@@ -1,4 +1,4 @@
-# Netexplore : Deploy your own Internet to learn TCP/IP by practical
+# Netexplore : Deploy your own Internet to learn TCP/IP by practical
 
 Netexplore uses containers to deploy an internet-like environment in order to teach the fundamentals of the Internet.
 
