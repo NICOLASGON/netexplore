@@ -1,4 +1,4 @@
 {
-    "name": "machine",
+    "name": "root-dns",
     "dist": {"dist": "debian", "release": "buster", "arch": "amd64"}
 }
