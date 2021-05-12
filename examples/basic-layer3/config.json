@@ -4,22 +4,22 @@
             "name": "m1",
             "template": "hosts/machine",
             "interfaces": [
-                {"name": "blue-lan", "ipv4": "10.0.1.2/24"}
+                {"name": "blue-lan", "ipv4": "10.0.1.2"}
             ]
         },
         {
             "name": "m2",
             "template": "hosts/machine",
             "interfaces": [
-                {"name": "red-lan", "ipv4": "10.0.2.2/24"}
+                {"name": "red-lan", "ipv4": "10.0.2.2"}
             ]
         },
         {
             "name": "router",
             "template": "net/router",
             "interfaces": [
-                {"name": "blue-lan", "ipv4": "10.0.1.1/24"},
-                {"name": "red-lan", "ipv4": "10.0.2.1/24"}
+                {"name": "blue-lan", "ipv4": "10.0.1.1"},
+                {"name": "red-lan", "ipv4": "10.0.2.1"}
             ]
         }
     ],

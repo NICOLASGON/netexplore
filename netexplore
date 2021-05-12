@@ -1,11 +1,16 @@
 #!/usr/bin/python3
 
-import lxc
+from pylxd import Client
 import sys
 import json
 import time
 import os
+import warnings
 from graphviz import Graph
+
+warnings.filterwarnings("ignore")
+
+client = Client()
 
 def load_json_file(path):
     json_file = None
@@ -14,77 +19,85 @@ def load_json_file(path):
     return json_file
 
 def create_network(net):
-    os.system("brctl addbr {}".format(net['name']))
-    os.system("ip link set {} up".format(net['name']))
-    os.system("iptables -A FORWARD -i {} -o {} -j ACCEPT".format(net['name'], net['name']))
+    if not client.networks.exists(net['name']):
+        client.networks.create(net['name'], type='bridge')
 
 def delete_network(net):
-    os.system("ip link set {} down".format(net['name']))
-    os.system("brctl delbr {}".format(net['name']))
-    os.system("iptables -D FORWARD -i {} -o {} -j ACCEPT".format(net['name'], net['name']))
+    if client.networks.exists(net['name']):
+        network = client.networks.get(net['name'])
+        network.delete()
 
 def create_machine(machine):
-
-    # Create or recreate the container if it exists
-    container = lxc.Container(machine['name'])
-    if container.defined:
-        container.stop()
-        container.destroy()
-        container = lxc.Container(machine['name'])
 
     # Load template configuration
     template_config = load_json_file('templates/{}/template.json'.format(machine['template']))
 
-    # Download distribution rootfs
-    if not container.create("download", args=template_config['dist']):
-        print("Failed to create the container rootfs", file=sys.stderr)
-        sys.exit(1)
+    # Create or recreate the container if it exists
+    if client.instances.exists(machine['name']):
+        container = client.instances.get(machine['name'])
+        container.stop()
+        container.delete()
 
-    # Create interface with host for internet access
-    container.network[0].type = "veth"
-    container.network[0].link = "lxcbr0"
-    container.network[0].flags = "up"
+    config = {
+        'name': machine['name'],
+        'type': 'container',
+        'source': {
+            'type': 'image',
+            'alias': template_config['image']
+        }
+    }
+    container = client.instances.create(config, wait=True)
 
     # Create interfaces from config file
     if_num = 1
     for interface in machine['interfaces']:
-        container.network.add("veth")
-        container.network[if_num].link = interface['name']
-        container.network[if_num].flags = "up"
-        if 'ipv4' in interface:
-            container.append_config_item("lxc.net.{}.ipv4.address".format(if_num), interface['ipv4'])
-        if 'ipv6' in interface:
-            container.append_config_item("lxc.net.{}.ipv6.address".format(if_num), interface['ipv6'])
+
+        if not 'ipv4' in interface:
+            interface['ipv4'] = ""
+
+        if not 'ipv6' in interface:
+            interface['ipv6'] = ""
+
+        interface_name = "eth" + str(if_num)
+
+        container.devices.update({
+            interface_name: {
+                "parent": interface['name'],
+                "nictype": "bridged",
+                "type": "nic",
+                "name": interface_name,
+            }
+        })
+
         if_num += 1
+
+    # Save configuration
+    container.save(wait=True)
 
     # Mount template and custom directories
     template_dir = os.path.dirname(os.path.realpath(sys.modules['__main__'].__file__))
-    container.append_config_item("lxc.mount.entry", template_dir + "/templates mnt/templates none ro,bind,create=dir 0 0")
+    container.files.recursive_put(template_dir + "/templates", "/mnt/templates")
     custom_dir = os.path.realpath(project_path)
-    container.append_config_item("lxc.mount.entry", custom_dir + "/custom mnt/custom none ro,bind,create=dir 0 0")
+    container.files.recursive_put(custom_dir + "/custom", "/mnt/custom")
 
     # Start the container
-    if not container.start():
-        print("Failed to start the container", file=sys.stderr)
-        sys.exit(1)
-
-    # Wait for the DHCP on lxcbr0 interface
-    # TODO: find another solution to wait less than 5 secs
-    time.sleep(5)
-
-    if not container.get_ips(timeout=60):
-        print("Failed to get ips of the container", file=sys.stderr)
-        sys.exit(1)
+    container.start(wait=True)
 
     # Execute init scripts from template and customization
-    container.attach_wait(lxc.attach_run_command, ["/bin/sh", "/mnt/templates/{}/provisioning.sh".format(machine['template'])])
+    container.execute(["/bin/sh", "/mnt/templates/{}/provisioning.sh".format(machine['template'])])
     if os.path.isfile('{}/custom/{}.sh'.format(custom_dir, machine['name'])):
-        container.attach_wait(lxc.attach_run_command, ["/bin/sh", "/mnt/custom/{}.sh".format(machine['name'])])
+        container.execute(["/bin/sh", "/mnt/custom/{}.sh".format(machine['name'])])
 
 def delete_machine(machine):
-    container = lxc.Container(machine['name'])
-    container.stop()
-    container.destroy()
+    if not client.instances.exists(machine['name']):
+        return
+
+    container = client.instances.get(machine['name'])
+    try:
+        container.stop(force=True, wait=True)
+    except:
+        pass
+    container.delete()
 
 def create_graph(config):
     g = Graph('G', filename='process.gv', engine='sfdp')
@@ -127,11 +140,13 @@ if __name__ == '__main__':
     
     elif sys.argv[1] == "stop":
 
-        for net in config['networks']:
-            delete_network(net)
-
         for machine in config['machines']:
             delete_machine(machine)
+
+        time.sleep(5)
+
+        for net in config['networks']:
+            delete_network(net)
 
     elif sys.argv[1] == "graph":
 

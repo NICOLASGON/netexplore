@@ -1,4 +1,4 @@
 {
     "name": "webserver",
-    "dist": {"dist": "alpine", "release": "3.13", "arch": "amd64"}
+    "image": "alpine/3.13"
 }
