@@ -1,5 +1,8 @@
 #!/bin/bash
 
+ip a add 10.0.2.2/24 dev eth1
+ip a add 10.0.1.1/24 dev eth2
+
 cat > /etc/haproxy/haproxy.cfg << EOL
 global
     log         127.0.0.1 local2
@@ -30,6 +33,12 @@ defaults
     timeout http-keep-alive 10s
     timeout check           10s
     maxconn                 3000
+
+frontend stats
+    bind *:8404
+    stats enable
+    stats uri /stats
+    stats refresh 10s
 
 frontend main
     bind *:80

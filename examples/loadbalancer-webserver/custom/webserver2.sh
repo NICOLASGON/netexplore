@@ -1,5 +1,7 @@
 #!/bin/sh
 
+ip a add 10.0.1.3/24 dev eth1
+
 cat > /etc/nginx/http.d/default.conf << EOL
 server {
 	listen 80 default_server;
