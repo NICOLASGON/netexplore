@@ -127,11 +127,19 @@ def create_graph(config):
 
 if __name__ == '__main__':
     
+    if sys.argv[1] == "template":
+
+        image = client.images.create_from_simplestreams("https://images.linuxcontainers.org", "alpine/3.13", public=False, auto_update=False)
+        image.add_alias("alpine/3.13", "")
+        image = client.images.create_from_simplestreams("https://images.linuxcontainers.org", "debian/buster", public=False, auto_update=False)
+        image.add_alias("debian/buster", "")
+        sys.exit(0)
+
     project_path = sys.argv[2]
     config = load_json_file('{}/config.json'.format(project_path))
 
     if sys.argv[1] == "start":
-    
+
         for net in config['networks']:
             create_network(net)
 
